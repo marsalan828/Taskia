@@ -1,50 +1,56 @@
 import { useEffect, useState } from "react";
-import type { Task } from "../types/task"
+import { db } from "../firebase";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+} from "firebase/firestore";
+import type { Task } from "../types/task";
 
 export type TaskState = {
   todo: Task[];
-  inprogress: Task[];
+  inProgress: Task[];
   done: Task[];
 };
 
 const defaultTasks: TaskState = {
   todo: [],
-  inprogress: [],
+  inProgress: [],
   done: [],
 };
 
 export function useTasks() {
-  const [tasks, setTasks] = useState<TaskState>(() => {
-    const saved = localStorage.getItem("tasks");
-    return saved ? JSON.parse(saved) : defaultTasks;
-  });
+  const [tasks, setTasks] = useState<TaskState>(defaultTasks);
 
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
+    const unsubscribe = onSnapshot(collection(db, "tasks"), (snapshot) => {
+      const allTasks = snapshot.docs.map(
+        (d) => ({ id: d.id, ...d.data() } as Task)
+      );
 
-  const addTask = (column: keyof TaskState, title: string) => {
-    const newTask: Task = { id: Date.now().toString(), title };
-    setTasks((prev) => ({
-      ...prev,
-      [column]: [...prev[column], newTask],
-    }));
+      setTasks({
+        todo: allTasks.filter((t) => t.status === "todo"),
+        inProgress: allTasks.filter((t) => t.status === "inProgress"),
+        done: allTasks.filter((t) => t.status === "done"),
+      });
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const addTask = async (status: Task["status"], title: string) => {
+    await addDoc(collection(db, "tasks"), { title, status });
   };
 
-  const removeTask = (column: keyof TaskState, id: string) => {
-    setTasks((prev) => ({
-      ...prev,
-      [column]: prev[column].filter((task) => task.id !== id),
-    }));
+  const removeTask = async (id: string) => {
+    await deleteDoc(doc(db, "tasks", id));
   };
 
-  const editTask = (column: keyof TaskState, id: string, title: string) => {
-    setTasks((prev) => ({
-      ...prev,
-      [column]: prev[column].map((task) =>
-        task.id === id ? { ...task, title } : task
-      ),
-    }));
+  const editTask = async (id: string, title: string) => {
+    await updateDoc(doc(db, "tasks", id), { title });
   };
 
   return { tasks, addTask, removeTask, editTask };

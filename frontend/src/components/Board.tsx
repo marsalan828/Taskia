@@ -11,22 +11,22 @@ export default function Board() {
         title="To Do"
         tasks={tasks.todo}
         onAdd={(title) => addTask("todo", title)}
-        onRemove={(id) => removeTask("todo", id)}
-        onEdit={(id, title) => editTask("todo", id, title)}
+        onRemove={(id) => removeTask(id)}
+        onEdit={(id, title) => editTask(id, title)}
       />
       <Column
         title="In Progress"
-        tasks={tasks.inprogress}
-        onAdd={(title) => addTask("inprogress", title)}
-        onRemove={(id) => removeTask("inprogress", id)}
-        onEdit={(id, title) => editTask("inprogress", id, title)}
+        tasks={tasks.inProgress}
+        onAdd={(title) => addTask("inProgress", title)}
+        onRemove={(id) => removeTask(id)}
+        onEdit={(id, title) => editTask(id, title)}
       />
       <Column
         title="Done"
         tasks={tasks.done}
         onAdd={(title) => addTask("done", title)}
-        onRemove={(id) => removeTask("done", id)}
-        onEdit={(id, title) => editTask("done", id, title)}
+        onRemove={(id) => removeTask(id)}
+        onEdit={(id, title) => editTask(id, title)}
       />
     </div>
   );
