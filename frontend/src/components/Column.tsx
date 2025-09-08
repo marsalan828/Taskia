@@ -1,7 +1,9 @@
 import { useState } from "react";
 import type { Task } from "../types/task";
+import { Droppable, Draggable } from "@hello-pangea/dnd";
 
 type Props = {
+  id: string;
   title: string;
   tasks: Task[];
   onAdd: (title: string) => void;
@@ -10,6 +12,7 @@ type Props = {
 };
 
 export default function Column({
+  id,
   title,
   tasks,
   onAdd,
@@ -22,33 +25,48 @@ export default function Column({
     <div className="bg-white p-4 rounded shadow w-1/3">
       <h2 className="text-lg font-bold mb-4">{title}</h2>
 
-      <div className="space-y-2">
-        {tasks.map((task) => (
+      <Droppable droppableId={id}>
+        {(provided: any) => (
           <div
-            key={task.id}
-            className="flex justify-between items-center bg-gray-100 p-2 rounded"
+            className="space-y-2 min-h-[50px]"
+            ref={provided.innerRef}
+            {...provided.droppableProps}
           >
-            <span>{task.title}</span>
-            <div className="space-x-2">
-              <button
-                onClick={() => {
-                  const updated = prompt("Edit task:", task.title);
-                  if (updated) onEdit(task.id, updated);
-                }}
-                className="text-blue-500 text-sm"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => onRemove(task.id)}
-                className="text-red-500 text-sm"
-              >
-                Delete
-              </button>
-            </div>
+            {tasks.map((task, index) => (
+              <Draggable key={task.id} draggableId={task.id} index={index}>
+                {(provided) => (
+                  <div
+                    className="flex justify-between items-center bg-gray-100 p-2 rounded"
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                  >
+                    <span>{task.title}</span>
+                    <div className="space-x-2">
+                      <button
+                        onClick={() => {
+                          const updated = prompt("Edit task:", task.title);
+                          if (updated) onEdit(task.id, updated);
+                        }}
+                        className="text-blue-500 text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => onRemove(task.id)}
+                        className="text-red-500 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
           </div>
-        ))}
-      </div>
+        )}
+      </Droppable>
 
       <div className="mt-4 flex">
         <input
