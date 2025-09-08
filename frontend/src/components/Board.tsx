@@ -1,4 +1,3 @@
-// src/components/Board.tsx
 import Column from "./Column";
 import { useTasks } from "../hooks/useTasks";
 
