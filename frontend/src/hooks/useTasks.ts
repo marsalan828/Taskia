@@ -53,5 +53,29 @@ export function useTasks() {
     await updateDoc(doc(db, "tasks", id), { title });
   };
 
-  return { tasks, addTask, removeTask, editTask };
+  const moveTask = async (
+    taskId: string,
+    newStatus: "todo" | "inProgress" | "done"
+  ) => {
+    const allTasks = [...tasks.todo, ...tasks.inProgress, ...tasks.done];
+    const task = allTasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const taskRef = doc(db, "tasks", taskId);
+    await updateDoc(taskRef, { status: newStatus });
+
+    setTasks((prev) => {
+      const updated = {
+        todo: prev.todo.filter((t) => t.id !== taskId),
+        inProgress: prev.inProgress.filter((t) => t.id !== taskId),
+        done: prev.done.filter((t) => t.id !== taskId),
+      };
+      return {
+        ...updated,
+        [newStatus]: [...updated[newStatus], { ...task, status: newStatus }],
+      };
+    });
+  };
+
+  return { tasks, addTask, removeTask, editTask, moveTask };
 }
