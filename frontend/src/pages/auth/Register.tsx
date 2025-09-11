@@ -1,14 +1,27 @@
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
-import { registerUser } from "../../slices/authSlice";
+import { clearError, registerUser } from "../../slices/authSlice";
 import { type RootState } from "../../store/store";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const Register = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { loading, error, user } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  useEffect(() => {
+    if (user) {
+      navigate("/board");
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
+    dispatch(clearError())
+  },[dispatch])
 
   const validationSchema = Yup.object({
     name: Yup.string()
