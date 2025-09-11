@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Task } from "../types/task";
 import { Droppable, Draggable } from "@hello-pangea/dnd";
+import { ClipLoader } from "react-spinners";
 
 type Props = {
   id: string;
@@ -9,6 +10,7 @@ type Props = {
   onAdd: (title: string) => void;
   onRemove: (id: string) => void;
   onEdit: (id: string, title: string) => void;
+  isTaskLoading: boolean;
 };
 
 export default function Column({
@@ -18,6 +20,7 @@ export default function Column({
   onAdd,
   onRemove,
   onEdit,
+  isTaskLoading,
 }: Props) {
   const [newTask, setNewTask] = useState("");
 
@@ -32,37 +35,43 @@ export default function Column({
             ref={provided.innerRef}
             {...provided.droppableProps}
           >
-            {tasks.map((task, index) => (
-              <Draggable key={task.id} draggableId={task.id} index={index}>
-                {(provided) => (
-                  <div
-                    className="flex justify-between items-center bg-gray-100 p-2 rounded"
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                  >
-                    <span>{task.title}</span>
-                    <div className="space-x-2">
-                      <button
-                        onClick={() => {
-                          const updated = prompt("Edit task:", task.title);
-                          if (updated) onEdit(task.id, updated);
-                        }}
-                        className="text-blue-500 text-sm"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => onRemove(task.id)}
-                        className="text-red-500 text-sm"
-                      >
-                        Delete
-                      </button>
+            {isTaskLoading ? (
+              <div className="flex justify-center items-center">
+                <ClipLoader size={50} color="#4A90E2" />
+              </div>
+            ) : (
+              tasks.map((task, index) => (
+                <Draggable key={task.id} draggableId={task.id} index={index}>
+                  {(provided) => (
+                    <div
+                      className="flex justify-between items-center bg-gray-100 p-2 rounded"
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                    >
+                      <span>{task.title}</span>
+                      <div className="space-x-2">
+                        <button
+                          onClick={() => {
+                            const updated = prompt("Edit task:", task.title);
+                            if (updated) onEdit(task.id, updated);
+                          }}
+                          className="text-blue-500 text-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => onRemove(task.id)}
+                          className="text-red-500 text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </Draggable>
-            ))}
+                  )}
+                </Draggable>
+              ))
+            )}
             {provided.placeholder}
           </div>
         )}
