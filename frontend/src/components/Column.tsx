@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Task } from "../types/task";
 import { Droppable, Draggable } from "@hello-pangea/dnd";
 import { ClipLoader } from "react-spinners";
