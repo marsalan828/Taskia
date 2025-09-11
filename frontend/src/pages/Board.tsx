@@ -1,4 +1,4 @@
-import Column from "./Column";
+import Column from "../components/Column";
 import { useTasks } from "../hooks/useTasks";
 import { DragDropContext } from "@hello-pangea/dnd";
 import type { DropResult } from "@hello-pangea/dnd";
