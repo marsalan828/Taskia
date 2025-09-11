@@ -30,35 +30,49 @@ const initialState: AuthState = {
   error: null,
 };
 
-export const registerUser = createAsyncThunk(
+export const registerUser = createAsyncThunk<
+  AuthUser,
+  { name: string; email: string; password: string },
+  { rejectValue: string }
+>(
   "auth/registerUser",
-  async ({
-    name,
-    email,
-    password,
-  }: {
-    name: string;
-    email: string;
-    password: string;
-  }) => {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    await updateProfile(userCredential.user, { displayName: name });
-    return userCredential.user;
+  async ({ name, email, password }, { rejectWithValue }) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      await updateProfile(userCredential.user, { displayName: name });
+      const user = userCredential.user;
+
+      return {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+      };
+    } catch (error: any) {
+      if (error.code === "auth/email-already-in-use") {
+        return rejectWithValue("Email already registered. Please login.");
+      }
+      return rejectWithValue("Something went wrong. Try again later.");
+    }
   }
 );
 
-export const loginUser = createAsyncThunk(
-  "auth/loginUser",
-  async ({ email, password }: { email: string; password: string }) => {
+export const loginUser = createAsyncThunk<
+  AuthUser,
+  { email: string; password: string },
+  { rejectValue: string }
+>("auth/loginUser", async ({ email, password }, { rejectWithValue }) => {
+  try {
     const userCredential = await signInWithEmailAndPassword(
       auth,
       email,
       password
     );
+
     const user = userCredential.user;
 
     return {
@@ -67,8 +81,16 @@ export const loginUser = createAsyncThunk(
       displayName: user.displayName,
       photoURL: user.photoURL,
     };
+  } catch (error: any) {
+    if (error.code === "auth/user-not-found") {
+      return rejectWithValue("No account found with this email.");
+    }
+    if (error.code === "auth/invalid-credential") {
+      return rejectWithValue("Invalid credentials. Please try again.");
+    }
+    return rejectWithValue("Login failed. Please try again later.");
   }
-);
+});
 
 export const logoutUser = createAsyncThunk("auth/logoutUser", async () => {
   await signOut(auth);
@@ -90,9 +112,10 @@ const authSlice = createSlice({
     });
     builder.addCase(
       registerUser.fulfilled,
-      (state, action: PayloadAction<User>) => {
+      (state, action: PayloadAction<AuthUser>) => {
         state.loading = false;
-        state.user = action.payload;
+        const { uid, email, displayName, photoURL } = action.payload;
+        state.user = { uid, email, displayName, photoURL };
         state.error = null;
       }
     );
@@ -111,8 +134,8 @@ const authSlice = createSlice({
       (state, action: PayloadAction<AuthUser>) => {
         state.loading = false;
         const { uid, email, displayName, photoURL } = action.payload;
-
         state.user = { uid, email, displayName, photoURL };
+        state.error = null;
       }
     );
     builder.addCase(loginUser.rejected, (state, action) => {
