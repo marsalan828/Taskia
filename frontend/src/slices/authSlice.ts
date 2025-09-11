@@ -8,7 +8,6 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
-  type User,
 } from "firebase/auth";
 import { auth } from "../firebase";
 

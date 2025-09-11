@@ -1,11 +1,15 @@
 import Column from "../components/Column";
 import LogOut from "../components/Logout";
+import { auth } from "../firebase";
 import { useTasks } from "../hooks/useTasks";
 import { DragDropContext } from "@hello-pangea/dnd";
 import type { DropResult } from "@hello-pangea/dnd";
 
 export default function Board() {
-  const { tasks, addTask, removeTask, editTask, moveTask } = useTasks();
+  const { tasks, addTask, removeTask, editTask, moveTask, isTaskLoading } =
+    useTasks();
+  const currentUser = auth.currentUser;
+  const currentUserId = currentUser?.uid
 
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -46,25 +50,28 @@ export default function Board() {
             id="todo"
             title="To Do"
             tasks={tasks.todo}
-            onAdd={(title) => addTask("todo", title)}
+            onAdd={(title) => addTask("todo", title, currentUserId)}
             onRemove={(id) => removeTask(id)}
             onEdit={(id, title) => editTask(id, title)}
+            isTaskLoading={isTaskLoading}
           />
           <Column
             id="inProgress"
             title="In Progress"
             tasks={tasks.inProgress}
-            onAdd={(title) => addTask("inProgress", title)}
+            onAdd={(title) => addTask("inProgress", title, currentUserId)}
             onRemove={(id) => removeTask(id)}
             onEdit={(id, title) => editTask(id, title)}
+            isTaskLoading={isTaskLoading}
           />
           <Column
             id="done"
             title="Done"
             tasks={tasks.done}
-            onAdd={(title) => addTask("done", title)}
+            onAdd={(title) => addTask("done", title, currentUserId)}
             onRemove={(id) => removeTask(id)}
             onEdit={(id, title) => editTask(id, title)}
+            isTaskLoading={isTaskLoading}
           />
         </div>
       </DragDropContext>
