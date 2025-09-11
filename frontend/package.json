@@ -16,8 +16,10 @@
     "formik": "^2.4.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-hot-toast": "^2.6.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.8.2",
+    "react-spinners": "^0.17.0",
     "yup": "^1.7.0"
   },
   "devDependencies": {

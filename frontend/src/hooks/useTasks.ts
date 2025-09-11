@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { db } from "../firebase";
+import { auth, db } from "../firebase";
 import {
   collection,
   addDoc,
@@ -7,8 +7,11 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  where,
+  query,
 } from "firebase/firestore";
 import type { Task } from "../types/task";
+import { onAuthStateChanged } from "firebase/auth";
 
 export type TaskState = {
   todo: Task[];
@@ -24,9 +27,27 @@ const defaultTasks: TaskState = {
 
 export function useTasks() {
   const [tasks, setTasks] = useState<TaskState>(defaultTasks);
+  const [uid, setUid] = useState<string | null>(null);
+  const [isTaskLoading, setIsTaskLoading] = useState<boolean>(true);
+
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "tasks"), (snapshot) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUid(user.uid);
+      } else {
+        setUid(null);
+        setTasks({ todo: [], inProgress: [], done: [] });
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!uid) return;
+    const q = query(collection(db, "tasks"), where("createdBy", "==", uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const allTasks = snapshot.docs.map(
         (d) => ({ id: d.id, ...d.data() } as Task)
       );
@@ -36,13 +57,18 @@ export function useTasks() {
         inProgress: allTasks.filter((t) => t.status === "inProgress"),
         done: allTasks.filter((t) => t.status === "done"),
       });
+      setIsTaskLoading(false)
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [uid]);
 
-  const addTask = async (status: Task["status"], title: string) => {
-    await addDoc(collection(db, "tasks"), { title, status });
+  const addTask = async (
+    status: Task["status"],
+    title: string,
+    createdBy?: string
+  ) => {
+    await addDoc(collection(db, "tasks"), { title, status, createdBy });
   };
 
   const removeTask = async (id: string) => {
@@ -77,5 +103,5 @@ export function useTasks() {
     });
   };
 
-  return { tasks, addTask, removeTask, editTask, moveTask };
+  return { tasks, addTask, removeTask, editTask, moveTask, isTaskLoading };
 }
