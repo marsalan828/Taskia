@@ -4,11 +4,14 @@ import { type RootState } from "../../store/store";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { loading, error, user } = useSelector(
+    (state: RootState) => state.auth
+  );
 
   const validationSchema = Yup.object({
     email: Yup.string()
@@ -18,6 +21,12 @@ const Login = () => {
       .min(6, "Password must be at least 6 characters")
       .required("Password is required"),
   });
+
+  useEffect(() => {
+    if (user) {
+      navigate("/board");
+    }
+  }, [user, navigate]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
