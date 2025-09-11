@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser } from "../../slices/authSlice";
+import { clearError, loginUser } from "../../slices/authSlice";
 import { type RootState } from "../../store/store";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -27,6 +27,10 @@ const Login = () => {
       navigate("/board");
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    dispatch(clearError())
+  },[dispatch])
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
