@@ -29,8 +29,8 @@ const Login = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    dispatch(clearError())
-  },[dispatch])
+    dispatch(clearError());
+  }, [dispatch]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
