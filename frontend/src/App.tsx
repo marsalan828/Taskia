@@ -6,6 +6,7 @@ import ProtectedLayout from "./protectedRoutes/protectedLayout";
 import { Toaster } from "react-hot-toast";
 import MyProfilePage from "./pages/MyProfilePage";
 import ProtectedLogin from "./protectedRoutes/protectedLogin";
+import Teams from "./pages/Teams";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route element={<ProtectedLayout />}>
             <Route path="/board" element={<Board />} />
             <Route path="/myProfile" element={<MyProfilePage />} />
+            <Route path="/teams" element={<Teams />} />
           </Route>
         </Routes>
       </BrowserRouter>
