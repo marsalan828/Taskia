@@ -23,7 +23,7 @@ const ProtectedLayout = () => {
         <ClipLoader size={50} color="#4A90E2" />
       </div>
     );
-  } 
+  }
 
   if (!user) {
     toast.error("You are not logged in! Please login first.");
@@ -34,9 +34,7 @@ const ProtectedLayout = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <main className="flex-1">
-        <Outlet />
-      </main>
+      <Outlet />
     </div>
   );
 };
