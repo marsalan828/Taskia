@@ -1,8 +1,9 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { auth } from "./firebase";
+import { auth } from "../firebase";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { ClipLoader } from "react-spinners";
+import Navbar from "../components/navbar";
 
 const ProtectedLayout = () => {
   const [loading, setLoading] = useState(true);
@@ -22,14 +23,22 @@ const ProtectedLayout = () => {
         <ClipLoader size={50} color="#4A90E2" />
       </div>
     );
-  }
+  } 
 
   if (!user) {
     toast.error("You are not logged in! Please login first.");
     return <Navigate to="/" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+
+      <main className="flex-1">
+        <Outlet />
+      </main>
+    </div>
+  );
 };
 
 export default ProtectedLayout;
