@@ -3,13 +3,15 @@ import { Field, ErrorMessage } from "formik";
 import { X } from "lucide-react";
 
 interface User {
-  id: number;
+  id: string; 
   name: string;
+  email: string;
+  photoURL?: string | null;
 }
 
 interface MembersSelectProps {
   users: User[];
-  values: { members: number[] };
+  values: { members: string[] };
   setFieldValue: (field: string, value: any) => void;
 }
 
@@ -28,12 +30,12 @@ const MembersSelect = ({
 
   const selectedUsers = users.filter((u) => values.members.includes(u.id));
 
-  const handleSelect = (userId: number) => {
+  const handleSelect = (userId: string) => {
     setFieldValue("members", [...values.members, userId]);
     setQuery("");
   };
 
-  const handleRemove = (userId: number) => {
+  const handleRemove = (userId: string) => {
     setFieldValue(
       "members",
       values.members.filter((id) => id !== userId)

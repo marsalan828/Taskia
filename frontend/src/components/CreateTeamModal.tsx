@@ -2,13 +2,33 @@ import Modal from "./Modal";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import MembersSelect from "./MembersSelect";
+import { useEffect, useState } from "react";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  serverTimestamp,
+} from "firebase/firestore";
+import { auth, db } from "../firebase";
 
 interface CreateTeamModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-// ✅ Validation Schema
+interface TeamFormValues {
+  name: string;
+  description: string;
+  members: string[];
+}
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  photoURL?: string | null;
+};
+
 const CreateTeamSchema = Yup.object().shape({
   name: Yup.string().required("Team name is required"),
   description: Yup.string().max(500, "Description is too long"),
@@ -16,13 +36,45 @@ const CreateTeamSchema = Yup.object().shape({
 });
 
 const CreateTeamModal = ({ isOpen, onClose }: CreateTeamModalProps) => {
-  // Dummy users list (later replace with data from backend/Redux)
-  const users = [
-    { id: 1, name: "Arsalan" },
-    { id: 2, name: "Ali" },
-    { id: 3, name: "Sara" },
-    { id: 4, name: "Hassan" },
-  ];
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const getAllUsers = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        const userList: User[] = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<User, "id">),
+        }));
+        setUsers(userList);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    getAllUsers();
+  }, []);
+
+  const handleSubmit = async (
+    values: TeamFormValues,
+    { resetForm }: { resetForm: () => void },
+    onClose: () => void
+  ) => {
+    try {
+      await addDoc(collection(db, "teams"), {
+        name: values.name,
+        description: values.description,
+        members: values.members,
+        createdAt: serverTimestamp(),
+        createdBy: auth.currentUser?.uid,
+      });
+
+      resetForm();
+      onClose();
+    } catch (error) {
+      console.error("Error creating team:", error);
+    }
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -31,14 +83,12 @@ const CreateTeamModal = ({ isOpen, onClose }: CreateTeamModalProps) => {
       <Formik
         initialValues={{ name: "", description: "", members: [] }}
         validationSchema={CreateTeamSchema}
-        onSubmit={(values) => {
-          console.log("Team created:", values);
-          onClose();
-        }}
+        onSubmit={(values, formikHelpers) =>
+          handleSubmit(values, formikHelpers, onClose)
+        }
       >
         {({ isSubmitting, values, setFieldValue }) => (
           <Form className="space-y-4">
-            {/* Team Name */}
             <div>
               <Field
                 type="text"
@@ -53,7 +103,6 @@ const CreateTeamModal = ({ isOpen, onClose }: CreateTeamModalProps) => {
               />
             </div>
 
-            {/* Description */}
             <div>
               <Field
                 as="textarea"
@@ -69,14 +118,12 @@ const CreateTeamModal = ({ isOpen, onClose }: CreateTeamModalProps) => {
               />
             </div>
 
-            {/* Members */}
             <MembersSelect
               users={users}
               values={values}
               setFieldValue={setFieldValue}
             />
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={isSubmitting}

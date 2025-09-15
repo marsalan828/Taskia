@@ -9,7 +9,8 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
 interface AuthUser {
   uid: string;
@@ -44,6 +45,19 @@ export const registerUser = createAsyncThunk<
       );
       await updateProfile(userCredential.user, { displayName: name });
       const user = userCredential.user;
+
+       const userRef = doc(db, "users", user.uid);
+       const userSnap = await getDoc(userRef);
+
+       if (!userSnap.exists()) {
+         await setDoc(userRef, {
+           uid: user.uid,
+           name: user.displayName || "",
+           email: user.email,
+           photoURL: user.photoURL || null,
+           createdAt: serverTimestamp(),
+         });
+       }
 
       return {
         uid: user.uid,
