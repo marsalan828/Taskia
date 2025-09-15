@@ -27,18 +27,24 @@ const Teams = () => {
   const [teamsLoading, setTeamsLoading] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<string | null>(null);
+  const [memberTeams, setMemberTeams] = useState<Team[]>([]);
 
   useEffect(() => {
     const currentUser = auth.currentUser?.uid;
     if (!currentUser) return;
 
-    const q = query(
+    const q1 = query(
       collection(db, "teams"),
       where("createdBy", "==", currentUser)
     );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const teamsList: Team[] = querySnapshot.docs.map((doc) => ({
+    const q2 = query(
+      collection(db, "teams"),
+      where("members", "array-contains", currentUser)
+    );
+
+    const unsubMyTeams = onSnapshot(q1, (snapshot) => {
+      const teamsList: Team[] = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...(doc.data() as Omit<Team, "id">),
       }));
@@ -46,7 +52,19 @@ const Teams = () => {
       setTeamsLoading(false);
     });
 
-    return () => unsubscribe();
+    const unsubMemberTeams = onSnapshot(q2, (snapshot) => {
+      const teamsList: Team[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Team, "id">),
+      }));
+      setMemberTeams(teamsList);
+      setTeamsLoading(false);
+    });
+
+    return () => {
+      unsubMyTeams();
+      unsubMemberTeams();
+    };
   }, []);
 
   const handleDelete = async () => {
@@ -62,7 +80,7 @@ const Teams = () => {
   };
 
   return (
-    <main className="flex flex-col justify-center mt-2">
+    <main className="flex flex-col justify-center mt-2 p-4">
       <div className="flex justify-center">
         <button
           onClick={() => setIsModalOpen(true)}
@@ -72,15 +90,34 @@ const Teams = () => {
         </button>
       </div>
 
-      <TeamList
-        teams={teams}
-        loading={teamsLoading}
-        onDelete={(id) => {
-          setTeamToDelete(id);
-          setDeleteModalOpen(true);
-        }}
-        onView={(id) => console.log("View team:", id)}
-      />
+      <section className="mb-6">
+        <h2 className="text-xl font-semibold mb-3 text-gray-800">
+          Your Teams
+        </h2>
+        <TeamList
+          teams={teams}
+          loading={teamsLoading}
+          onDelete={(id) => {
+            setTeamToDelete(id);
+            setDeleteModalOpen(true);
+          }}
+          onView={(id) => console.log("View team:", id)}
+        />
+      </section>
+      <hr className="my-6 border-gray-300" />
+      <section>
+        <h2 className="text-xl font-semibold mb-3 text-gray-800">
+          Teams You’re a Part Of
+        </h2>
+        <TeamList
+          teams={memberTeams.filter(
+            (team) => team.createdBy !== auth.currentUser?.uid
+          )}
+          loading={teamsLoading}
+          onDelete={() => {}}
+          onView={(id) => console.log("View team:", id)}
+        />
+      </section>
       <CreateTeamModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
