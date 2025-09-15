@@ -7,7 +7,6 @@ const MyProfilePage = () => {
   const [email, setEmail] = useState<string>("");
   const [photoURL, setPhotoURL] = useState<string | null>(null);
 
-  // Load current user info
   useEffect(() => {
     const currentUser = auth.currentUser;
     if (currentUser) {
@@ -26,7 +25,6 @@ const MyProfilePage = () => {
           My Profile
         </h2>
 
-        {/* User photo */}
         {photoURL ? (
           <img
             src={photoURL}
@@ -39,7 +37,6 @@ const MyProfilePage = () => {
           </div>
         )}
 
-        {/* User info */}
         <div className="space-y-2 text-center">
           <p className="text-lg font-semibold text-gray-700">{displayName}</p>
           <p className="text-sm text-gray-500">{email}</p>
