@@ -2,11 +2,15 @@ import { useEffect, useState } from "react";
 import CreateTeamModal from "../components/CreateTeamModal";
 import {
   collection,
+  deleteDoc,
+  doc,
   onSnapshot,
   query,
   where,
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import TeamList from "../components/TeamList";
 
 type Team = {
   id: string;
@@ -21,18 +25,26 @@ const Teams = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(true);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<string | null>(null);
+  const [memberTeams, setMemberTeams] = useState<Team[]>([]);
 
   useEffect(() => {
     const currentUser = auth.currentUser?.uid;
     if (!currentUser) return;
 
-    const q = query(
+    const q1 = query(
       collection(db, "teams"),
       where("createdBy", "==", currentUser)
     );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const teamsList: Team[] = querySnapshot.docs.map((doc) => ({
+    const q2 = query(
+      collection(db, "teams"),
+      where("members", "array-contains", currentUser)
+    );
+
+    const unsubMyTeams = onSnapshot(q1, (snapshot) => {
+      const teamsList: Team[] = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...(doc.data() as Omit<Team, "id">),
       }));
@@ -40,11 +52,35 @@ const Teams = () => {
       setTeamsLoading(false);
     });
 
-    return () => unsubscribe();
+    const unsubMemberTeams = onSnapshot(q2, (snapshot) => {
+      const teamsList: Team[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Team, "id">),
+      }));
+      setMemberTeams(teamsList);
+      setTeamsLoading(false);
+    });
+
+    return () => {
+      unsubMyTeams();
+      unsubMemberTeams();
+    };
   }, []);
 
+  const handleDelete = async () => {
+    if (!teamToDelete) return;
+    try {
+      await deleteDoc(doc(db, "teams", teamToDelete));
+      setTeamToDelete(null);
+    } catch (error) {
+      console.error("Error deleting team:", error);
+    } finally {
+      setDeleteModalOpen(false);
+    }
+  };
+
   return (
-    <main className="flex flex-col justify-center mt-2">
+    <main className="flex flex-col justify-center mt-2 p-4">
       <div className="flex justify-center">
         <button
           onClick={() => setIsModalOpen(true)}
@@ -54,75 +90,42 @@ const Teams = () => {
         </button>
       </div>
 
-      <div className="w-full space-y-3">
-        {teamsLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="animate-pulse flex justify-between items-center p-4 bg-gray-100 rounded-xl"
-              >
-                <div>
-                  <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                  <div className="h-3 w-48 bg-gray-200 rounded mb-1"></div>
-                  <div className="h-2 w-20 bg-gray-200 rounded"></div>
-                </div>
-                <div className="h-6 w-12 bg-gray-300 rounded"></div>
-              </div>
-            ))}
-          </div>
-        ) : teams.length === 0 ? (
-          <>
-            <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
-              <div className="w-16 h-16 flex items-center justify-center bg-indigo-100 text-indigo-600 rounded-full shadow">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 17v-6a2 2 0 012-2h6M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v2M9 17l-2 2m0 0l-2-2m2 2V9"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                No Teams Yet
-              </h2>
-            </div>
-          </>
-        ) : (
-          <div className="w-full space-y-3">
-            {teams.map((team) => (
-              <div
-                key={team.id}
-                className="flex justify-between items-center p-4 bg-white rounded-xl shadow hover:shadow-md transition"
-              >
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {team.name}
-                  </h3>
-                  <p className="text-sm text-gray-500">{team.description}</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {team.members.length} members
-                  </p>
-                </div>
-
-                <button className="px-3 py-1 text-sm bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition">
-                  View
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <section className="mb-6">
+        <h2 className="text-xl font-semibold mb-3 text-gray-800">
+          Your Teams
+        </h2>
+        <TeamList
+          teams={teams}
+          loading={teamsLoading}
+          onDelete={(id) => {
+            setTeamToDelete(id);
+            setDeleteModalOpen(true);
+          }}
+          onView={(id) => console.log("View team:", id)}
+        />
+      </section>
+      <hr className="my-6 border-gray-300" />
+      <section>
+        <h2 className="text-xl font-semibold mb-3 text-gray-800">
+          Teams You’re a Part Of
+        </h2>
+        <TeamList
+          teams={memberTeams.filter(
+            (team) => team.createdBy !== auth.currentUser?.uid
+          )}
+          loading={teamsLoading}
+          onDelete={() => {}}
+          onView={(id) => console.log("View team:", id)}
+        />
+      </section>
       <CreateTeamModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDelete}
       />
     </main>
   );
